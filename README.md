@@ -1,4 +1,4 @@
-#Setting up [Traefik](https://traefik.io/) as a reverse-proxy with dotnet
+# Setting up [Traefik](https://traefik.io/) as a reverse-proxy with dotnet
 
 <b> My Minimum requirements </b>
 
