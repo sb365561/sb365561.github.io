@@ -1,5 +1,9 @@
 # Setting up [Traefik](https://traefik.io/) as a reverse-proxy with dotnet
 
+
+There is a script to create the reverse proxy <a href="./traefik-reverse-proxy-setup.sh" >here </a>
+
+
 <b> My Minimum requirements </b>
 
 
