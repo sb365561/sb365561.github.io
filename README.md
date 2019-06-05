@@ -175,7 +175,7 @@ Open the favourite browser and go to `http://localhost/myhello`
 We should see something like this:
 
 
-Image of myhello
+<img src="./myhello-site.png" alt="Screenshot of myhello site" />
 
 
 We can shut the containers down with 
