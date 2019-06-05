@@ -154,7 +154,7 @@ Create another file called `myhello-compose.yml`. Use this content:
             - "traefik.enable: True"
             - "traefik.port: 80"
 
-We use the `myhello` image we created earlier. We name the traefik backend to `myhello-web`. This allows us to scale and add more `myhello` containers later on if necessary. We enable this container so that it can receive requests on porfilet 80.
+We use the `myhello` image we created earlier. We name the traefik backend to `myhello-web`. This allows us to scale and add more `myhello` containers later on if necessary. We enable this container so that it can receive requests on port 80.
 
 #### Start `traefik` container
 
