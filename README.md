@@ -26,7 +26,7 @@ There is a script to create the reverse proxy <a href="./traefik-reverse-proxy-s
 
 
 ## 1. Create a web frontend as a docker image
-We need a web project that we can utilise in a container. For simplicity, we choose the default mvc app and we call it `myhello`. The project will take its name from its current directory so we therefore create a directory called `myhello` first and then the mvc project within it.
+We need a web project that we can utilise in a container. For simplicity, we choose the default mvc app and we call it `myhello`. The project will take its name from its current directory so we therefore create a directory called `myhello` first and then the mvc project within it. This will create a minimal site with models, views and controllers.
 
     $ mkdir myhello
     $ cd myhello
@@ -35,7 +35,7 @@ We need a web project that we can utilise in a container. For simplicity, we cho
     This template contains technologies from parties other than Microsoft, see https://aka.ms/aspnetcore-template-3pn-210 for details.
     $
 
-This will create a minimal site with models, views and controllers.
+
 We can publish this site:
 
     ~/myhello $ dotnet publish --configuration=Release
