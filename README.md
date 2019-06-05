@@ -3,6 +3,8 @@
 
 There is a bash script to create the reverse proxy <a href="./traefik-reverse-proxy-setup.sh" >here </a>
 
+Related:
+* [setting-up-traefik-as-a-reverse-proxy-for-asp-net-applications](https://blog.codeship.com/setting-up-traefik-as-a-reverse-proxy-for-asp-net-applications/)
 
 <b> My Minimum requirements </b>
 
