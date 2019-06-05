@@ -26,6 +26,9 @@ There is a bash script to create the reverse proxy <a href="./traefik-reverse-pr
 
 
 ## 1. Create a web frontend as a docker image
+
+
+#### Create the site
 We need a web project that we can utilise in a container. For simplicity, we choose the default mvc app and we call it `myhello`. The project will take its name from its current directory so we therefore create a directory called `myhello` first and then the mvc project within it. This will create a minimal site with models, views and controllers.
 
     $ mkdir myhello
