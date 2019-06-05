@@ -53,7 +53,7 @@ We now have a deployable application in the `publish/` folder
     $
 
 
-####Create the docker image
+#### Create the docker image
 
 We want to take the `myhello` application and package it in a docker image. For that, we need a `dockerfile`. Create a file called `dockerfile` in `~/myhello` with the following content:
 
@@ -102,7 +102,7 @@ We can now build this image:
     $
 
 
-##2. Wire it up with docker-compose
+## 2. Wire it up with docker-compose
 
 
 Now we need to assemble everything together and use traefik as a reverse proxy.
@@ -152,13 +152,13 @@ Create another file called `myhello-compose.yml`. Use this content:
 
 We use the `myhello` image we created earlier. We name the traefik backend to `myhello-web`. This allows us to scale and add more `myhello` containers later on if necessary. We enable this container so that it can receive requests on porfilet 80.
 
-####Start `traefik` container
+#### Start `traefik` container
 
     ~/myhello $ sudo docker-compose -f traefik-reverse-proxy-compose.yml up -d
     Starting tmp_frontend_1 ... done
     $
 
-####Start `nyhello` container
+#### Start `nyhello` container
 
     ~/tmp $ sudo docker-compose -f myhello-compose.yml up -d
     Creating myhello_myhello_1 ... done
