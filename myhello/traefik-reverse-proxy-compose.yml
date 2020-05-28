@@ -1,0 +1,18 @@
+
+version: "3.1"
+services:
+  frontend:
+    image: traefik:v1.7
+    command: --api --docker --logLevel=DEBUG
+    ports:
+        - "80:80"
+        - "443:443"
+
+  # Expose the Traefik web UI on port 8080. We restrict this
+  # to localhost so that we do not publicly expose the
+  # dashboard.
+        - "127.0.0.1:8080:8080"
+    volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+    labels:
+        - "traefik.enable: False"

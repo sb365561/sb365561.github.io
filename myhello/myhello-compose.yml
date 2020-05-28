@@ -1,0 +1,18 @@
+
+version: "3.1"
+services:
+
+    myhello:
+        image: myhello
+        labels:        
+            - "traefik.backend=myhello-web"      
+
+            # This will redirect /myhello to /myhello/
+            # https://docs.traefik.io/user-guide/examples/
+            # The very last example shows how to redirect from /myhello to /myhello/
+            - "traefik.frontend.redirect.regex=^(.*)/myhello$$"
+            - "traefik.frontend.redirect.replacement=$$1/myhello/"      
+            - "traefik.frontend.rule=PathPrefix:/myhello;ReplacePathRegex: ^/myhello/(.*) /$$1"
+
+            - "traefik.enable: True"
+            - "traefik.port: 80" 
