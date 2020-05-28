@@ -39,16 +39,17 @@ dotnet publish --configuration=Release;
 
 
 echo '
-FROM microsoft/dotnet
-WORKDIR /inetpub/wwwroot
-COPY bin/Release/netcoreapp2.1/publish ./
-EXPOSE 80
-ENTRYPOINT ["dotnet", "myhello.dll"] ' > dockerfile;
+    FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
+    WORKDIR /inetpub/wwwroot
+    COPY bin/Release/netcoreapp3.1/ ./
+    EXPOSE 80
+    ENTRYPOINT ["dotnet", "myhello.dll"] ' > dockerfile;
 
 sudo docker build -t myhello . ;
 
 
-echo 'version: "3.1"
+echo '
+version: "3.1"
 services:
 
     myhello:
@@ -72,23 +73,24 @@ sudo docker-compose -f myhello-compose.yml up -d # --remove-orphans
 
 
 
-echo 'version: "3.1"
+echo '
+version: "3.1"
 services:
-    frontend:
-        image: traefik
-        command: --api --docker --logLevel=DEBUG
-        ports:
-            - "80:80"
-            - "443:443"
+  frontend:
+    image: traefik:v1.7
+    command: --api --docker --logLevel=DEBUG
+    ports:
+        - "80:80"
+        - "443:443"
 
-        # Expose the Traefik web UI on port 8080. We restrict this
-        # to localhost so that we dont publicly expose the
-        # dashboard.
-            - "127.0.0.1:8080:8080"
-        volumes:
-            - "/var/run/docker.sock:/var/run/docker.sock"
-        labels:
-            traefik.enable: False ' > traefik-reverse-proxy-compose.yml;
+  # Expose the Traefik web UI on port 8080. We restrict this
+  # to localhost so that we do not publicly expose the
+  # dashboard.
+        - "127.0.0.1:8080:8080"
+    volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+    labels:
+        - "traefik.enable: False"' > traefik-reverse-proxy-compose.yml;
 
 
 
