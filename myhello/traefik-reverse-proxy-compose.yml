@@ -1,18 +1,28 @@
-
 version: "3.1"
 services:
-  frontend:
-    image: traefik:v1.7
-    command: --api --docker --logLevel=DEBUG
+  traefik:
+    image: traefik:v2.2
+    command: 
+        - "--api.insecure=true"
+        - "--providers.docker=true"
+        - "--providers.docker.exposedbydefault=false"
+        - "--entrypoints.web.address=:80"
+        - "--log=true"
+        - "--log.level=DEBUG" # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+        - "--log.filepath=/trlogs/traefik2.log"
+        - "--accesslog=true"
+        - "--accesslog.filepath=/trlogs/traefik2_access.log"
+  
+                
     ports:
         - "80:80"
-        - "443:443"
+        # - "443:443"
 
   # Expose the Traefik web UI on port 8080. We restrict this
-  # to localhost so that we do not publicly expose the
+  # to localhost so that we don't publicly expose the
   # dashboard.
         - "127.0.0.1:8080:8080"
     volumes:
         - "/var/run/docker.sock:/var/run/docker.sock"
     labels:
-        - "traefik.enable: False"
+        - "traefik.enable=false"

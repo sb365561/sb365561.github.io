@@ -1,10 +1,14 @@
-# Setting up [Traefik](https://traefik.io/) as a reverse-proxy with dotnet
+# Setting up [Traefik2](https://traefik.io/) as a reverse-proxy with dotnet
 
 
-There is a bash script to create the reverse proxy <a href="./traefik-reverse-proxy-setup.sh" >here </a>
 
 Related:
-* [setting-up-traefik-as-a-reverse-proxy-for-asp-net-applications](https://blog.codeship.com/setting-up-traefik-as-a-reverse-proxy-for-asp-net-applications/)
+* [Setting up Traefik as a Reverse Proxy for ASP.NET Applications](https://blog.codeship.com/setting-up-traefik-as-a-reverse-proxy-for-asp-net-applications/)
+* [Ultimate Docker Home Server with Traefik 2, LE, and OAuth / Authelia [2020]](https://www.smarthomebeginner.com/traefik-2-docker-tutorial/)
+* [Traefik 2.0 & Docker 101](https://containo.us/blog/traefik-2-0-docker-101-fc2893944b9d/)
+* [Traefik 'PathPrefix' is not working as expected for underlying requests](https://stackoverflow.com/questions/61946945/traefik-pathprefix-is-not-working-as-expected-for-underlying-requests)
+
+* [Dealing with Application Base URLs and Razor link generation while hosting ASP.NET web apps behind Reverse Proxies](https://www.hanselman.com/blog/DealingWithApplicationBaseURLsAndRazorLinkGenerationWhileHostingASPNETWebAppsBehindReverseProxies.aspx)
 
 <b> My Minimum requirements </b>
 
@@ -32,84 +36,55 @@ Related:
 
 
 #### Create the site
-We need a web project that we can utilise in a container. For simplicity, we choose the default mvc app and we call it `myhello`. The project will take its name from its current directory so we therefore create a directory called `myhello` first and then the mvc project within it. This will create a minimal site with models, views and controllers.
+We need a web project that we can utilise in a container. For simplicity, we choose the dotnet sample application
 
-    $ mkdir myhello
-    $ cd myhello
-    $ dotnet new mvc
-    The template "ASP.NET Core Web App (Model-View-Controller)" was created successfully.
-    This template contains technologies from parties other than Microsoft, see https://aka.ms/aspnetcore-template-3pn-210 for details.
-    $
+The `myhello-compose.yml` file:
 
+```yml
+version: "3.1"
+services:
 
-We can publish this site:
+    myhello:
+        image: mcr.microsoft.com/dotnet/core/samples:aspnetapp
+        command:
+            - "--entrypoints.web.address=:80"
+        expose:
+            - "80"
+        labels:        
+            - "traefik.http.routers.myhello.rule=PathPrefix(`/myhello`)"
+            - "traefik.http.routers.myhello-route.entrypoints=web"
+            - "traefik.http.middlewares.myhello-pathstrip.stripprefixregex.regex=/myhello"
+            - "traefik.http.routers.myhello-middlew.middlewares=myhello-pathstrip@docker"
+            - "traefik.enable=true"
+```
 
-    ~/myhello $ dotnet publish --configuration=Release
-    Microsoft (R) Build Engine version 16.6.0+5ff7b0c9e for .NET Core
-    Copyright (C) Microsoft Corporation. All rights reserved.
-
-    Determining projects to restore...
-    All projects are up-to-date for restore.
-    myhello -> /home/samuelh/codeprojects/myhello/bin/Release/netcoreapp3.1/myhello.dll
-    myhello -> /home/samuelh/codeprojects/myhello/bin/Release/netcoreapp3.1/myhello.Views.dll
-    myhello -> /home/samuelh/codeprojects/myhello/bin/Release/netcoreapp3.1/publish/
-
-    $
-
-    
-We now have a deployable application in the `publish/` folder
-
-    ~/myhello/bin/Release/netcoreapp3.1/publish $ ls
-    appsettings.Development.json  myhello            myhello.dll  myhello.runtimeconfig.json  myhello.Views.pdb  wwwroot
-    appsettings.json              myhello.deps.json  myhello.pdb  myhello.Views.dll           web.config
-    $
+`
+expose:
+    - "80"
+`
+ 
+ The dotnet sample app does not expose any ports so we need to specify that here so that we can access the container
 
 
-#### Create the docker image
+``` "traefik.http.routers.myhello.rule=PathPrefix(`/myhello`)" ```
 
-We want to take the `myhello` application and package it in a docker image. For that, we need a `dockerfile`. Create a file called `dockerfile` in `~/myhello` with the following content:
+This will match any paths with the prefix `/myhello`
 
-    FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
-    WORKDIR /inetpub/wwwroot
-    COPY bin/Release/netcoreapp3.1/ ./
-    EXPOSE 80
-    ENTRYPOINT ["dotnet", "myhello.dll"]
+` - "traefik.http.middlewares.myhello-pathstrip.stripprefixregex.regex=/myhello"` 
 
+Remove prefix `/myhello`
 
-We can also create this directly from the command line:
+We need to remove the prefix /myhello from the path before passing it to the sample app because the sample app does not define `/myhello`. It will respond to the root (/). Therefore we need to send  `/myhello` from traefik to `/` in the sample app container.
 
 
-    $ cd ~/myhello;
-    echo '
-    FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
-    WORKDIR /inetpub/wwwroot
-    COPY bin/Release/netcoreapp3.1/ ./
-    EXPOSE 80
-    ENTRYPOINT ["dotnet", "myhello.dll"] ' > dockerfile
+` - "traefik.http.routers.myhello.middlewares=myhello-pathstrip@docker" `
 
-This will use the `microsoft/dotnet` as the base image, copy the files from the `publish/` folder to `/inetpub/wwwroot` inside the image, open up port 80 and run the application.
+Add the filter `myhello-pathstrip` as a middleware.
 
-We can now build this image:
+` - "traefik.enable=true" `
 
-    ~/myhello $ sudo docker build -t myhello .
+Make the container to be visible.
 
-    Step 1/5 : FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
-    ---> 4bee399eb313
-    Step 2/5 : WORKDIR /inetpub/wwwroot
-    ---> Using cache
-    ---> 6575adbf868e
-    Step 3/5 : COPY bin/Release/netcoreapp3.1/ ./
-    ---> Using cache
-    ---> f2202ae077d8
-    Step 4/5 : EXPOSE 80
-    ---> Using cache
-    ---> 4eb6fa1d769d
-    Step 5/5 : ENTRYPOINT ["dotnet", "myhello.dll"]
-    ---> Using cache
-    ---> 722b50d4232d
-    Successfully built 722b50d4232d
-    Successfully tagged myhello:latest
-    $
 
 
 ## 2. Wire it up with docker-compose
@@ -119,60 +94,72 @@ Now we need to assemble everything together and use traefik as a reverse proxy.
 
 Create a file called `traefik-reverse-proxy-compose.yml`. In it, add the following content
 
-    version: "3.1"
-    services:
-    frontend:
-        image: traefik:v1.7
-        command: --api --docker --logLevel=DEBUG
-        ports:
-            - "80:80"
-            - "443:443"
+```yml
+version: "3.1"
+services:
+  traefik:
+    image: traefik:v2.2
+    command: 
+        - "--api.insecure=true"
+        - "--providers.docker=true"
+        - "--providers.docker.exposedbydefault=false"
+        - "--entrypoints.web.address=:80"
+        - "--log=true"
+        - "--log.This allowslevel=DEBUG" # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+        - "--log.filepath=/trlogs/traefik2.log"
+        - "--accesslog=true"
+        - "--accesslog.filepath=/trlogs/traefik2_access.log"
+  
+                
+    ports:
+        - "80:80"
+        # - "443:443"
 
-    # Expose the Traefik web UI on port 8080. We restrict this
-    # to localhost so that we don't publicly expose the
-    # dashboard.
-            - "127.0.0.1:8080:8080"
-        volumes:
-            - "/var/run/docker.sock:/var/run/docker.sock"
-        labels:
-            - "traefik.enable: False"
-
+  # Expose the Traefik web UI on port 8080. We restrict this
+  # to localhost so that we don't publicly expose the
+  # dashboard.
+        - "127.0.0.1:8080:8080"
+    volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+    labels:
+        - "traefik.enable=false"
+```
 
 This will create the traefik container.
 
-Create another file called `myhello-compose.yml`. Use this content:
 
-    version: "3.1"
-    services:
+   
 
-        myhello:
-            image: myhello
-            labels:        
-                - "traefik.backend=myhello-web"      
 
-                # This will redirect /myhello to /myhello/
-                # https://docs.traefik.io/user-guide/examples/
-                # The very last example shows how to redirect from /myhello to /myhello/
-                - "traefik.frontend.redirect.regex=^(.*)/myhello$$"
-                - "traefik.frontend.redirect.replacement=$$1/myhello/"      
-                - "traefik.frontend.rule=PathPrefix:/myhello;ReplacePathRegex: ^/myhello/(.*) /$$1"
-
-                - "traefik.enable: True"
-                - "traefik.port: 80"
-
-We use the `myhello` image we created earlier. We name the traefik backend to `myhello-web`. This allows us to scale and add more `myhello` containers later on if necessary. We enable this container so that it can receive requests on port 80.
 
 #### Start `traefik` container
 
     ~/myhello $ sudo docker-compose -f traefik-reverse-proxy-compose.yml up -d
-    Starting tmp_frontend_1 ... done
+    Starting myhello_traefik_1 ... done
+    Attaching to myhello_traefik_1
+
     $
 
-#### Start `nyhello` container
+#### Start `myhello` container
 
-    ~/tmp $ sudo docker-compose -f myhello-compose.yml up -d
-    Creating myhello_myhello_1 ... done
+```
+    ~/myhello $ sudo docker-compose -f myhello-compose.yml up -d
+
+    Starting myhello_myhello_1 ... done
+    Attaching to myhello_myhello_1
+    myhello_1  | warn: Microsoft.AspNetCore.DataProtection.Repositories.FileSystemXmlRepository[60]
+    myhello_1  |       Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed.
+    myhello_1  | info: Microsoft.Hosting.Lifetime[0]
+    myhello_1  |       Now listening on: http://[::]:80
+    myhello_1  | info: Microsoft.Hosting.Lifetime[0]
+    myhello_1  |       Application started. Press Ctrl+C to shut down.
+    myhello_1  | info: Microsoft.Hosting.Lifetime[0]
+    myhello_1  |       Hosting environment: Production
+    myhello_1  | info: Microsoft.Hosting.Lifetime[0]
+    myhello_1  |       Content root path: /app
+
     $
+```
 
 Open the favourite browser and go to `http://localhost/myhello`
 
@@ -183,6 +170,9 @@ We should see something like this:
 
 <img src="./myhello-site.png" alt="Screenshot of myhello site" />
 
+
+The site does not have any css etc applied to it because the sample app returns the path to the css as `http://localhost/css/site.css` while we expect `http://localhost/myhello/css/site.css`.
+Instructions on how to adjust that can be found [here](https://www.hanselman.com/blog/DealingWithApplicationBaseURLsAndRazorLinkGenerationWhileHostingASPNETWebAppsBehindReverseProxies.aspx)
 
 We can shut the containers down with 
 
@@ -201,3 +191,10 @@ Shutting down `traefik`:
     Removing myhello_frontend_1 ... done
     Removing network myhello_default
     $
+
+
+## Helpful items ##
+
+* Command to copy the traefik log files from the container to local the drive (requires traefik to be running): 
+
+    ` sudo docker cp $(sudo docker container ps  | grep traefik |  awk '{ print $1}'):/trlogs . `

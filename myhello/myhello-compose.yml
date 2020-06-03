@@ -1,18 +1,14 @@
-
 version: "3.1"
 services:
-
     myhello:
-        image: myhello
+        image: mcr.microsoft.com/dotnet/core/samples:aspnetapp
+        command:
+            - "--entrypoints.web.address=:80"
+        expose:
+            - "80"
         labels:        
-            - "traefik.backend=myhello-web"      
-
-            # This will redirect /myhello to /myhello/
-            # https://docs.traefik.io/user-guide/examples/
-            # The very last example shows how to redirect from /myhello to /myhello/
-            - "traefik.frontend.redirect.regex=^(.*)/myhello$$"
-            - "traefik.frontend.redirect.replacement=$$1/myhello/"      
-            - "traefik.frontend.rule=PathPrefix:/myhello;ReplacePathRegex: ^/myhello/(.*) /$$1"
-
-            - "traefik.enable: True"
-            - "traefik.port: 80" 
+            - "traefik.http.routers.myhello.rule=PathPrefix(`/myhello`)"
+            - "traefik.http.routers.myhello-route.entrypoints=web"
+            - "traefik.http.middlewares.myhello-pathstrip.stripprefixregex.regex=/myhello"
+            - "traefik.http.routers.myhello.middlewares=myhello-pathstrip@docker"
+            - "traefik.enable=true"
